@@ -112,6 +112,11 @@ class LOFAREvaluator(DatasetEvaluator):
         includes_associated_fail_fraction, includes_unassociated_fail_fraction, correct_cat = \
             _evaluate_predictions_on_lofar_score()
 
+        # Calculate/print catalogue improvement
+        base_score = self.baseline()
+        correct_cat = self.our_score(includes_associated_fail_fraction, includes_unassociated_fail_fraction)
+        self.improv(base_score, correct_cat)
+
         self._results = OrderedDict()
         self._results["bbox"] = {"assoc_single_fail_fraction": includes_associated_fail_fraction[0],
         "assoc_multi_fail_fraction": includes_associated_fail_fraction[1],
@@ -121,11 +126,25 @@ class LOFAREvaluator(DatasetEvaluator):
         # Copy so the caller can do whatever with results
         return copy.deepcopy(self._results)
 
-    def _evaluate_predictions_on_lofar_score(dataset_name, predictions, imsize, output_dir, 
-                                        save_appendix='', scale_factor=1, 
-                                        overwrite=True, summary_only=False,
-                                        comp_cat_path=None, gt_data=None,
-                                        fits_dir=None, metadata=None, debug=False):
+    def baseline(self):
+        total = self.single + self.multi
+        correct = self.single/total
+        print(f"Baseline assumption cat is {correct:.1%} correct")
+        return correct
+
+    def our_score(self,assoc_fail, unassoc_fail, suffix=''):
+        fail_single = assoc_fail[0]*single + unassoc_fail[0]*single
+        fail_multi = assoc_fail[1]*multi + unassoc_fail[1]*multi
+        total = single + multi
+        correct = (total-(fail_single+fail_multi))/total
+        print(f"{suffix} cat is {correct:.1%} correct")
+        return correct
+
+    def improv(self, baseline, our_score):
+        print(f"{(our_score-baseline)/baseline:.2%} improvement")
+
+
+    def _evaluate_predictions_on_lofar_score(self, scale_factor=1, debug=False):
         """ 
         Evaluate the results using our LOFAR appropriate score.
 
@@ -151,6 +170,14 @@ class LOFAREvaluator(DatasetEvaluator):
             print("pred_bboxes_scores")
             print(self.pred_bboxes_scores[0])
 
+        # Count number of components in dataset
+        # Retrieve number of components per central source
+        comps = [counts[comp_name_to_source_name_dict[source_name]] for source_name in source_names]
+        
+        # Get number of single and multi comp sources
+        self.single_comps = np.sum([1 if len(xs)==0 else 0 for xs,ys in self.related_comps])
+        self.multi_comps = np.sum([1 if len(xs)>0 else 0 for xs,ys in self.related_comps])
+        assert len(self.related_comps) == self.multi_comps + self.single_comps
 
         # Filter out predicted bboxes that do not cover the focussed pixel
         pred_central_bboxes_scores = [[(tuple(bbox),score) for bbox, score in zip(bboxes, scores) 
@@ -193,28 +220,11 @@ class LOFAREvaluator(DatasetEvaluator):
         includes_unassociated_fail_fraction = /
             self._check_if_pred_central_bbox_includes_unassociated_comps(debug=debug)
 
+
         return includes_associated_fail_fraction, includes_unassociated_fail_fraction, correct_cat
 
-    def baseline(single, multi):
-        total = single + multi
-        correct = single/total
-        print(f"Baseline assumption cat is {correct:.1%} correct")
-        return correct
-
-    def our_score(single, multi,score_dict, suffix=''):
-        fail_single = score_dict['assoc_single_fail_fraction']*single + score_dict['unassoc_single_fail_fraction']*single
-        fail_multi = score_dict['assoc_multi_fail_fraction']*multi + score_dict['unassoc_multi_fail_fraction']*multi
-        total = single + multi
-        correct = (total-(fail_single+fail_multi))/total
-        print(f"{suffix} cat is {correct:.1%} correct")
-        return correct
-
-    def improv(baseline, our_score):
-        print(f"{(our_score-baseline)/baseline:.2%} improvement")
-
-
         
-    def _check_if_pred_central_bbox_includes_unassociated_comps(debug=False):
+    def _check_if_pred_central_bbox_includes_unassociated_comps(self, debug=False):
         """Check whether the predicted central box includes a number of unassocatiated components
             as indicated by the ground truth"""
         # Tally for single comp
@@ -234,19 +244,19 @@ class LOFAREvaluator(DatasetEvaluator):
             ran = list(range(len(self.close_comp_scores)))
             fail_indices = [i for i, n_comp, total in zip(ran, self.n_comps, self.close_comp_scores) 
                     if ((n_comp == 1) and (0 != total)) ]
-            collect_misboxed(pred, image_dir, output_dir, "unassoc_single_fail_fraction", fail_indices,
-                    source_names,metadata,gt_data,gt_locs)
+            #collect_misboxed(pred, image_dir, output_dir, "unassoc_single_fail_fraction", fail_indices,
+            #        source_names,metadata,gt_data,gt_locs)
 
             # Collect single comp sources that fail to include their gt comp
             fail_indices = [i for i, n_comp, total in zip(ran, self.n_comps, self.close_comp_scores) 
                     if ((n_comp > 1) and (0 != total)) ]
-            collect_misboxed(pred, image_dir, output_dir, "unassoc_multi_fail_fraction", fail_indices,
-                    source_names,metadata,gt_data,gt_locs)
+            #collect_misboxed(pred, image_dir, output_dir, "unassoc_multi_fail_fraction", fail_indices,
+            #        source_names,metadata,gt_data,gt_locs)
         return 1-single_comp_success_frac, 1-multi_comp_binary_success_frac
 
 
 
-    def _check_if_pred_central_bbox_misses_comp(debug=False):
+    def _check_if_pred_central_bbox_misses_comp(self, debug=False):
         """Check whether the predicted central box misses a number of assocatiated components
             as indicated by the ground truth"""
 
@@ -264,14 +274,14 @@ class LOFAREvaluator(DatasetEvaluator):
             ran = list(range(len(self.comp_scores)))
             fail_indices = [i for i, n_comp, total in zip(ran, self.n_comps, self.comp_scores) 
                     if ((n_comp == 1) and (n_comp != total)) ]
-            collect_misboxed(pred, image_dir, output_dir, "assoc_single_fail_fraction", fail_indices,
-                    source_names,metadata,gt_data,gt_locs, imsize)
+            #collect_misboxed(pred, image_dir, output_dir, "assoc_single_fail_fraction", fail_indices,
+            #        source_names,metadata,gt_data,gt_locs, imsize)
 
             # Collect single comp sources that fail to include their gt comp
             fail_indices = [i for i, n_comp, total in zip(ran, self.n_comps, self.comp_scores) 
                     if ((n_comp > 1) and (n_comp != total)) ]
-            collect_misboxed(pred, image_dir,output_dir, "assoc_multi_fail_fraction", fail_indices,
-                    source_names,metadata,imsize)
+            #collect_misboxed(pred, image_dir,output_dir, "assoc_multi_fail_fraction", fail_indices,
+            #        source_names,metadata,imsize)
 
         return 1-single_comp_success_frac, 1-multi_comp_binary_success_frac
     
