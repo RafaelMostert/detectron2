@@ -643,8 +643,9 @@ class LOFARTrainer(SimpleTrainer):
         def test_and_save_results():
             imsize=200
             self._last_eval_results = self.test(self.cfg, self.model,
-                    evaluators=[LOFAREvaluator(self.cfg.DATASETS.TEST[0], self.cfg, False,
-                        imsize,cfg.OUTPUT_DIR)])
+                    evaluators=[LOFAREvaluator(self.cfg.DATASETS.TEST[0],cfg.OUTPUT_DIR)])
+                    #evaluators=[LOFAREvaluator(self.cfg.DATASETS.TEST[0], self.cfg, False,
+                    #    imsize,cfg.OUTPUT_DIR)])
             return self._last_eval_results
 
         # Do evaluation after checkpointer, because then if it fails,

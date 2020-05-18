@@ -122,10 +122,12 @@ def inference_on_dataset(model, data_loader, evaluator, overwrite=True, only_zer
     
     predictions_save_path = path.join(evaluator._output_dir,
             f'predictions_{evaluator._dataset_name}.pkl')
-    print(predictions_save_path)
     if not overwrite and path.exists(predictions_save_path):
         # Load existing predictions if overwrite is false
-        evaluator._predictions = load_obj(predictions_save_path)
+        #evaluator._predictions = load_obj(predictions_save_path)
+        (evaluator._predictions, evaluator.focussed_comps, evaluator.related_comps, 
+            evaluator.unrelated_comps,
+            evaluator.n_comps,evaluator.pred_bboxes_scores) = load_obj(predictions_save_path)
     else:
 
         num_warmup = min(5, total - 1)
@@ -161,7 +163,9 @@ def inference_on_dataset(model, data_loader, evaluator, overwrite=True, only_zer
                         n=10,
                     )
         # Save to pickle
-        save_obj(evaluator._predictions, predictions_save_path)
+        save_obj([evaluator._predictions,evaluator.focussed_comps,evaluator.related_comps,
+            evaluator.unrelated_comps,evaluator.n_comps,evaluator.pred_bboxes_scores], 
+            predictions_save_path)
 
         # Measure the time only for this worker (before the synchronization barrier)
         total_time = time.perf_counter() - start_time
