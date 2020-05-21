@@ -203,7 +203,7 @@ class LOFAREvaluator(DatasetEvaluator):
 
         # Filter out predicted bboxes that do not cover the focussed pixel
         pred_central_bboxes_scores = [[(tuple(bbox),score) for bbox, score in zip(bboxes, scores) 
-                            if self.is_within(x*scale_factor,imsize-y*scale_factor, 
+                            if self.is_within(x*scale_factor,y*scale_factor, 
                                 bbox[0],bbox[1],bbox[2],bbox[3])] 
                               for (x, y), (bboxes, scores) 
                               in zip(self.focussed_comps, self.pred_bboxes_scores)]
@@ -220,11 +220,10 @@ class LOFAREvaluator(DatasetEvaluator):
             print(pred_central_bboxes_scores[0])
 
         # Check if other source comps fall inside predicted central box
-        # NOTE: y is flipped here in a hacky way
         #print("comps")
         #[print(comps) for comps, (bbox, score) 
         #                                  in zip(self.related_comps, pred_central_bboxes_scores)]
-        self.comp_scores = [np.sum([self.is_within(x*scale_factor,imsize-y*scale_factor,
+        self.comp_scores = [np.sum([self.is_within(x*scale_factor,y*scale_factor,
             bbox[0],bbox[1],bbox[2],bbox[3]) 
                         for x,y in list(zip(comps[0],comps[1]))])
                                           for comps, (bbox, score) 
@@ -240,8 +239,7 @@ class LOFAREvaluator(DatasetEvaluator):
         if debug:
             print('len comp_scores ',len(self.comp_scores))
         assert len(self.unrelated_comps) == len(pred_central_bboxes_scores)
-        # NOTE: y is flipped here in a hacky way
-        self.close_comp_scores = [np.sum([self.is_within(x*scale_factor,imsize-y*scale_factor,
+        self.close_comp_scores = [np.sum([self.is_within(x*scale_factor,y*scale_factor,
             bbox[0],bbox[1],bbox[2],bbox[3]) 
                     for x,y in zip(xs,ys)])
                             for (xs,ys), (bbox, score) in zip(self.unrelated_comps,

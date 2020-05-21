@@ -93,7 +93,6 @@ print("Start training")
 trainer.train()
 
 
-print('DOne training')
 
 """
 # Look at training curves in tensorboard:
@@ -106,10 +105,7 @@ get_ipython().run_line_magic('tensorboard', '--logdir output  --port 6006')
 """
 
 
-print("Enter Inference mode")
-
-
-
+print('Done training. Enter inference mode')
 cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set the testing threshold for this model
 predictor = DefaultPredictor(cfg)
@@ -136,81 +132,25 @@ for d in random.sample(aap, 3):
     plt.close()
 
 
-
-
-
 print("Evaluate performance for validation set")
-
 # returns a torch DataLoader, that loads the given detection dataset, 
 # with test-time transformation and batching.
+# Val_loader produces inputs that can enter the model for inference, 
+# the results of which can be evaluated by the evaluator
+# The return value is that which is returned by evaluator.evaluate()
 val_loader = build_detection_test_loader(cfg, f"val")
-
-my_dataset = get_lofar_dicts(os.path.join(DATASET_PATH,f"VIA_json_val.pkl"))
-
-imsize = cfg.INPUT.MAX_SIZE_TRAIN
-evaluator = LOFAREvaluator(f"val", cfg, False,gt_data=my_dataset, overwrite=False)
-            
-# Val_loader produces inputs that can enter the model for inference, 
-# the results of which can be evaluated by the evaluator
-# The return value is that which is returned by evaluator.evaluate()
-predictions = inference_on_dataset(trainer.model, val_loader, evaluator, overwrite=False)
-print(predictions)
-
-# Create evaluator
-#1.28, 70.44, 8.83, 5.84
-#1.16, 69.71, 9.64, 6.93
-
+evaluator = LOFAREvaluator(f"val", cfg.OUTPUT_DIR, distributed=True)
+predictions = inference_on_dataset(trainer.model, val_loader, evaluator, overwrite=True)
 
 
 """
-#Test set evaluation
-
+print("Evaluate performance for test set")
 # returns a torch DataLoader, that loads the given detection dataset, 
 # with test-time transformation and batching.
-test_loader = build_detection_test_loader(cfg, f"{DATASET_NAME}_test")
-
-#evaluator = COCOEvaluator("lofar_data1_val", cfg, False, output_dir="./output/")
-my_dataset = get_lofar_dicts(os.path.join(base_path,f"VIA_json_test.pkl"))
-imsize = 200
-
-evaluator = LOFAREvaluator(f"{DATASET_NAME}_test", cfg, False, imsize, gt_data=None, overwrite=True)
-            
 # Val_loader produces inputs that can enter the model for inference, 
 # the results of which can be evaluated by the evaluator
 # The return value is that which is returned by evaluator.evaluate()
-predictions = inference_on_dataset(trainer.model, test_loader, evaluator, overwrite=True)
-
-# Create evaluator
-
-"""
-
-def baseline(single, multi):
-    total = single + multi
-    correct = single/total
-    print(f"Baseline assumption cat is {correct:.1%} correct")
-    return correct
-
-def our_score(single, multi,score_dict):
-    fail_single = score_dict['assoc_single_fail_fraction']*single + score_dict['unassoc_single_fail_fraction']*single
-    fail_multi = score_dict['assoc_multi_fail_fraction']*multi + score_dict['unassoc_multi_fail_fraction']*multi
-    total = single + multi
-    correct = (total-(fail_single+fail_multi))/total
-    print(f"Our cat is {correct:.1%} correct")
-    return correct
-def improv(baseline, our_score):
-    print(f"{(our_score-baseline)/baseline:.2%} improvement")
-    
-test_score_dict = {'assoc_single_fail_fraction': 0.0012224938875305957, 'assoc_multi_fail_fraction': 0.3433242506811989, 
-                   'unassoc_single_fail_fraction': 0.1136919315403423, 'unassoc_multi_fail_fraction': 0.10899182561307907}
-val_score_dict = predictions['bbox']
-single, multi = 818,367
-single, multi = 861, 329
-baseline = baseline(single, multi)
-our_score = our_score(single, multi,val_score_dict)
-improv(baseline, our_score)
-
-
-
-"""
-test_score_dict = {'assoc_single_fail_fraction': 0.0012224938875305957, 'assoc_multi_fail_fraction': 0.3433242506811989, 'unassoc_single_fail_fraction': 0.1136919315403423, 'unassoc_multi_fail_fraction': 0.10899182561307907}
+val_loader = build_detection_test_loader(cfg, "test")
+evaluator = LOFAREvaluator("test", cfg.OUTPUT_DIR, distributed=True)
+predictions = inference_on_dataset(trainer.model, val_loader, evaluator, overwrite=True)
 """

@@ -7,7 +7,7 @@ DATALOADER:
 DATASETS:
   TRAIN: ("train",)
   #VAL: ("val",)
-  TEST: ("test",)
+  TEST: ("train","val","test",)
   IMAGE_DIR: "/data/mostertrij/data/frcnn_images/"
   COMP_CAT_PATH: '/data/mostertrij/data/catalogues/LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits'
   FITS_PATH: "/data/mostertrij/data/frcnn_images/cutouts/"
@@ -42,3 +42,5 @@ SOLVER:
   IMS_PER_BATCH: 2
   STEPS: (100000, 140000)
   MAX_ITER: 150000
+TEST:
+  EVAL_PERIOD: 200
