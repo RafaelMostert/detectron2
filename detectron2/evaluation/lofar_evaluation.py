@@ -148,7 +148,7 @@ class LOFAREvaluator(DatasetEvaluator):
         fail_multi = assoc_fail[1]*self.multi_comps + unassoc_fail[1]*self.multi_comps
         total = self.single_comps + self.multi_comps
         correct = (total-(fail_single+fail_multi))/total
-        print(f"Trained cat is {correct:.1%} correct")
+        print(f"{self._dataset_name} cat is {correct:.1%} correct")
         return correct
 
     def improv(self, baseline, our_score):

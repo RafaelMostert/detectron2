@@ -183,18 +183,18 @@ def inference_on_dataset(model, data_loader, evaluator, overwrite=True, only_zer
             )
         )
     results = evaluator.evaluate()
-    print(results)
     logger.info(f"LOFAR Evaluation metrics (for all values 0% is best, 100% is worst):")
-    logger.info(f"1. Fraction of predictions that fail to cover a single component source.")
+    logger.info(f"1. Pred. that fail to cover a single comp. source.")
     logger.info(f"{results['bbox']['assoc_single_fail_fraction']:.2%}")
-    logger.info(f"2. Fraction of predictions that fail to cover all components of a " \
-            "multi-component source.")
+    logger.info(f"2. Pred. that fail to cover all comp. of a " \
+            "multi-comp, source.")
     logger.info(f"{results['bbox']['assoc_multi_fail_fraction']:.2%}")
-    logger.info(f"3. Fraction of predictions that include unassociated components for a single component source.")
+    logger.info(f"3. Pred. that include unassociated comp. for a single comp. source.")
     logger.info(f"{results['bbox']['unassoc_single_fail_fraction']:.2%}")
-    logger.info(f"4. Fraction of predictions that include unassociated components for a " \
-            "multi-component source.")
+    logger.info(f"4. Pred. that include unassociated comp. for a " \
+            "multi-comp. source.")
     logger.info(f"{results['bbox']['unassoc_multi_fail_fraction']:.2%}")
+    logger.info(f"Catalogue is {results['bbox']['correct_catalogue']} correct.")
 
     # An evaluator may return None when not in main process.
     # Replace it by an empty dict instead to make it easier for downstream code to handle

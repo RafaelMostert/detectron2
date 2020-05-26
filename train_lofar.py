@@ -26,15 +26,18 @@ from operator import itemgetter
 import matplotlib.pyplot as plt
 random.seed(5455)
 
-print("Load configuration file")
 assert len(argv) > 1, "Insert path of configuration file when executing this script"
 cfg = get_cfg()
 cfg.merge_from_file(argv[1])
+print(f"Loaded configuration file {argv[1]}")
+ROTATION_ENABLED = bool(int(argv[2])) # 0 is False, 1 is True
 EXPERIMENT_NAME= cfg.EXPERIMENT_NAME
 DATASET_PATH= cfg.DATASET_PATH
 print(f"Experiment: {EXPERIMENT_NAME}")
+print(f"Rotation enabled: {ROTATION_ENABLED}")
 print(f"Output path: {cfg.OUTPUT_DIR}")
 print(f"Attempt to load training data from: {DATASET_PATH}")
+os.makedirs(cfg.OUTPUT_DIR,exist_ok=True)
 
 
 print("Load our data")
@@ -45,8 +48,11 @@ def get_lofar_dicts(annotation_filepath):
     for i in range(len(dataset_dicts)):
         for ob in dataset_dicts[i]['annotations']:
             ob['bbox_mode'] = BoxMode.XYXY_ABS
-        if dataset_dicts[i]['file_name'].endswith('_rotated0deg.png'):
+        if ROTATION_ENABLED:
             new_data.append(dataset_dicts[i])
+        else:
+            if dataset_dicts[i]['file_name'].endswith('_rotated0deg.png'):
+                new_data.append(dataset_dicts[i])
     return new_data
 
 # Register data inside detectron
