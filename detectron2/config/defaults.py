@@ -81,6 +81,9 @@ _C.INPUT.FORMAT = "BGR"
 # Mask R-CNN supports either "polygon" or "bitmask" as ground truth.
 _C.INPUT.MASK_FORMAT = "polygon"  # alternative: "bitmask"
 
+# Enable rotated copies in training dataset
+_C.INPUT.ROTATION_ENABLED = False
+
 # scale factor
 _C.INPUT.SCALE_FACTOR = 1.0
 
@@ -90,6 +93,9 @@ _C.INPUT.SCALE_FACTOR = 1.0
 _C.DATASETS = CN()
 # List of the dataset names for training. Must be registered in DatasetCatalog
 _C.DATASETS.TRAIN = ()
+# Limit the size of the training dataset.
+# Set to infinity for disabling
+_C.DATASETS.TRAIN_SIZE = 99999999999999999999999999999999999
 # List of the pre-computed proposal files for training, which must be consistent
 # with datasets listed in DATASETS.TRAIN.
 _C.DATASETS.PROPOSAL_FILES_TRAIN = ()
@@ -540,6 +546,10 @@ _C.TEST.EXPECTED_RESULTS = []
 # The period (in terms of steps) to evaluate the model during training.
 # Set to 0 to disable.
 _C.TEST.EVAL_PERIOD = 0
+# Extra iterations at which to evaluate on top of the regular eval_period
+# Can be useful to sample specific parts of training more often
+# Set to [] to disable
+_C.TEST.EXTRA_EVAL = []
 # The sigmas used to calculate keypoint OKS.
 # When empty it will use the defaults in COCO.
 # Otherwise it should have the same length as ROI_KEYPOINT_HEAD.NUM_KEYPOINTS.

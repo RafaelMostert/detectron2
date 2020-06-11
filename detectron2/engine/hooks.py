@@ -302,12 +302,13 @@ class EvalHook(HookBase):
     It is executed every ``eval_period`` iterations and after the last iteration.
     """
 
-    def __init__(self, eval_period, eval_function):
+    def __init__(self, eval_period, eval_function, extra_eval):
         """
         Args:
             eval_period (int): the period to run `eval_function`.
             eval_function (callable): a function which takes no arguments, and
                 returns a nested dict of evaluation metrics.
+            extra_eval (list of ints): the specific extra iterations at which to run `eval_function`.
 
         Note:
             This hook must be enabled in all or none workers.
@@ -316,6 +317,7 @@ class EvalHook(HookBase):
         """
         self._period = eval_period
         self._func = eval_function
+        self._extra_eval = extra_eval 
 
     def _do_eval(self):
         results = self._func()
@@ -344,6 +346,8 @@ class EvalHook(HookBase):
         next_iter = self.trainer.iter + 1
         is_final = next_iter == self.trainer.max_iter
         if is_final or (self._period > 0 and next_iter % self._period == 0):
+            self._do_eval()
+        elif (self._period > 0) and (next_iter in self._extra_eval):
             self._do_eval()
 
     def after_train(self):

@@ -12,7 +12,7 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer, ColorMode
 from detectron2.data import DatasetCatalog, MetadataCatalog, build_detection_test_loader
 from detectron2.structures import BoxMode
-from detectron2.engine import DefaultPredictor, DefaultTrainer, LOFARTrainer
+from detectron2.engine import DefaultPredictor, LOFARTrainer
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset, LOFAREvaluator
 
 # import some common libraries
@@ -30,50 +30,61 @@ assert len(argv) > 1, "Insert path of configuration file when executing this scr
 cfg = get_cfg()
 cfg.merge_from_file(argv[1])
 print(f"Loaded configuration file {argv[1]}")
-ROTATION_ENABLED = bool(int(argv[2])) # 0 is False, 1 is True
-EXPERIMENT_NAME= cfg.EXPERIMENT_NAME
+#ROTATION_ENABLED = bool(int(argv[2])) # 0 is False, 1 is True
 DATASET_PATH= cfg.DATASET_PATH
-print(f"Experiment: {EXPERIMENT_NAME}")
-print(f"Rotation enabled: {ROTATION_ENABLED}")
+print(f"Experiment: {cfg.EXPERIMENT_NAME}")
+print(f"Rotation enabled: {cfg.INPUT.ROTATION_ENABLED}")
 print(f"Output path: {cfg.OUTPUT_DIR}")
 print(f"Attempt to load training data from: {DATASET_PATH}")
 os.makedirs(cfg.OUTPUT_DIR,exist_ok=True)
 
 
 print("Load our data")
+#def get_lofar_dicts(annotation_filepath, n_cutouts=np.inf, rotation=False):
 def get_lofar_dicts(annotation_filepath):
     with open(annotation_filepath, "rb") as f:
         dataset_dicts = pickle.load(f)
     new_data = []
+    counter=1
+    max_value = np.inf
+    if annotation_filepath.endswith('train.pkl'): 
+        max_value = min(cfg.DATASETS.TRAIN_SIZE,len(dataset_dicts))
     for i in range(len(dataset_dicts)):
+        if counter > max_value:
+            break
         for ob in dataset_dicts[i]['annotations']:
             ob['bbox_mode'] = BoxMode.XYXY_ABS
-        if ROTATION_ENABLED:
+        if cfg.INPUT.ROTATION_ENABLED:
             new_data.append(dataset_dicts[i])
+            counter+=1 
         else:
             if dataset_dicts[i]['file_name'].endswith('_rotated0deg.png'):
                 new_data.append(dataset_dicts[i])
+                counter+=1 
+    print('len dataset is:', len(new_data), annotation_filepath)
     return new_data
 
 # Register data inside detectron
+# With DATASET_SIZES one can limit the size of these datasets
 for d in ["train", "val", "test"]:
     DatasetCatalog.register(d, 
-                            lambda d=d: get_lofar_dicts(os.path.join(DATASET_PATH,f"VIA_json_{d}.pkl")))
+                            lambda d=d:
+                            get_lofar_dicts(os.path.join(
+                                DATASET_PATH,f"VIA_json_{d}.pkl")))
     MetadataCatalog.get(d).set(thing_classes=["radio_source"])
 lofar_metadata = MetadataCatalog.get("train")
 
 
-
 print("Sample and plot input data as sanity check")
-dataset_dicts = get_lofar_dicts(os.path.join(DATASET_PATH,"VIA_json_train.pkl"))
-for i, d in enumerate(random.sample(dataset_dicts, 3)):
+train_dict = get_lofar_dicts(os.path.join(DATASET_PATH,"VIA_json_train.pkl")) 
+for i, d in enumerate(random.sample(train_dict, 3)):
     img = imread(d["file_name"])
     visualizer = Visualizer(img[:, :, ::-1], metadata=lofar_metadata, scale=0.5)
     vis = visualizer.draw_dataset_dict(d)
     a= vis.get_image()[:, :, ::-1]
-    plt.figure(figsize=(15,15))
+    plt.figure(figsize=(10,10))
     plt.imshow(a)
-    plt.savefig(os.path.join(cfg.OUTPUT_DIR,f"random_input_example_for_sanity_check_{i}"))
+    plt.savefig(os.path.join(cfg.OUTPUT_DIR,f"random_input_example_for_sanity_check_{i}.jpg"))
     plt.close()
 
 
@@ -109,15 +120,9 @@ get_ipython().run_line_magic('tensorboard', '--logdir output  --port 6006')
 #ssh -X -N -f -L localhost:8890:localhost:6006 tritanium
 # Then open localhost:8890 to see tensorboard
 """
+print('Done training.')
 
-
-print('Done training. Enter inference mode')
-cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set the testing threshold for this model
-predictor = DefaultPredictor(cfg)
-
-
-
+"""
 print("Sample and plot predicted data as sanity check")
 aap = get_lofar_dicts(os.path.join(DATASET_PATH,f"VIA_json_val.pkl"))
 for d in random.sample(aap, 3):
@@ -136,6 +141,10 @@ for d in random.sample(aap, 3):
     plt.imshow(v.get_image()[:, :, ::-1])
     plt.savefig(os.path.join(cfg.OUTPUT_DIR,f"random_prediction_example_for_sanity_check_{i}"))
     plt.close()
+cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
+cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set the testing threshold for this model
+predictor = DefaultPredictor(cfg)
+
 
 
 print("Evaluate performance for validation set")
@@ -147,6 +156,7 @@ print("Evaluate performance for validation set")
 val_loader = build_detection_test_loader(cfg, f"val")
 evaluator = LOFAREvaluator(f"val", cfg.OUTPUT_DIR, distributed=True)
 predictions = inference_on_dataset(trainer.model, val_loader, evaluator, overwrite=True)
+"""
 
 
 """
