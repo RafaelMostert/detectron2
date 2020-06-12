@@ -224,6 +224,8 @@ def get_detection_dataset_dicts(
     for dataset_name, dicts in zip(dataset_names, dataset_dicts):
         assert len(dicts), "Dataset '{}' is empty!".format(dataset_name)
 
+    # Can be commented away, as my proposals are already incorporated in my dataset_dicts
+    """
     if proposal_files is not None:
         assert len(dataset_names) == len(proposal_files)
         # load precomputed proposals from proposal files
@@ -231,6 +233,7 @@ def get_detection_dataset_dicts(
             load_proposals_into_dataset(dataset_i_dicts, proposal_file)
             for dataset_i_dicts, proposal_file in zip(dataset_dicts, proposal_files)
         ]
+    """
 
     dataset_dicts = list(itertools.chain.from_iterable(dataset_dicts))
 
@@ -360,7 +363,8 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
         [dataset_name],
         filter_empty=False,
         proposal_files=[
-            cfg.DATASETS.PROPOSAL_FILES_TEST[list(cfg.DATASETS.TEST).index(dataset_name)]
+        # Can be commented out because our proposals are embedded in dataset_dicts already
+            #cfg.DATASETS.PROPOSAL_FILES_TEST[list(cfg.DATASETS.TEST).index(dataset_name)]
         ]
         if cfg.MODEL.LOAD_PROPOSALS
         else None,

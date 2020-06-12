@@ -780,11 +780,11 @@ class LOFARTrainer(SimpleTrainer):
             dict: a dict of result metrics
         """
         logger = logging.getLogger(__name__)
-        print(evaluators)
-        print(type(evaluators))
+        #print(evaluators)
+        #print(type(evaluators))
         if isinstance(evaluators, DatasetEvaluator):
             evaluators = [evaluators]
-        print(evaluators)
+        #print(evaluators)
         if evaluators is not None:
             assert len(cfg.DATASETS.TEST) == len(evaluators), "{} != {}".format(
                 len(cfg.DATASETS.TEST), len(evaluators)
