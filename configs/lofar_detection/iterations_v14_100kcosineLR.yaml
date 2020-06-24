@@ -1,6 +1,6 @@
 _BASE_: "../Base-RCNN-FPN.yaml"
-EXPERIMENT_NAME: "v12"
-OUTPUT_DIR: "/data/mostertrij/tridentnet/output/v12/"
+EXPERIMENT_NAME: "v14"
+OUTPUT_DIR: "/data/mostertrij/tridentnet/output/v14/"
 DATASET_PATH: "/data/mostertrij/data/frcnn_images/LGZ_v8/LGZ_COCOstyle/annotations/"
 DATALOADER:
   NUM_WORKERS: 1
@@ -38,12 +38,12 @@ MODEL:
     BATCH_SIZE_PER_IMAGE: 512   # faster, and good enough for this toy dataset (default: 512)
     NUM_CLASSES: 1  # only has one class (radio_source)
 SOLVER:
-  #LR_SCHEDULER_NAME:  "WarmupCosineLR" 
+  LR_SCHEDULER_NAME:  "WarmupCosineLR" 
   BASE_LR: 0.0003
   IMS_PER_BATCH: 2
-  STEPS: (200000,266000)
-  MAX_ITER: 300000 
+  STEPS: ()
+  MAX_ITER: 100000 
   CHECKPOINT_PERIOD: 30000
 TEST:
   EVAL_PERIOD: 20000
-  EXTRA_EVAL: [1,500,1000,2500,5000,10000,15000]
+  EXTRA_EVAL: [10,500,1000,2500,5000,10000]

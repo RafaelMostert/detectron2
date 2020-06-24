@@ -34,6 +34,7 @@ print(f"Loaded configuration file {argv[1]}")
 DATASET_PATH= cfg.DATASET_PATH
 print(f"Experiment: {cfg.EXPERIMENT_NAME}")
 print(f"Rotation enabled: {cfg.INPUT.ROTATION_ENABLED}")
+print(f"Precomputed bboxes: {cfg.MODEL.PROPOSAL_GENERATOR}")
 print(f"Output path: {cfg.OUTPUT_DIR}")
 print(f"Attempt to load training data from: {DATASET_PATH}")
 os.makedirs(cfg.OUTPUT_DIR,exist_ok=True)
@@ -54,13 +55,15 @@ def get_lofar_dicts(annotation_filepath):
             break
         for ob in dataset_dicts[i]['annotations']:
             ob['bbox_mode'] = BoxMode.XYXY_ABS
+        if cfg.MODEL.PROPOSAL_GENERATOR:
+            dataset_dicts[i]["proposal_bbox_mode"] = BoxMode.XYXY_ABS
         if cfg.INPUT.ROTATION_ENABLED:
             new_data.append(dataset_dicts[i])
             counter+=1 
         else:
             if dataset_dicts[i]['file_name'].endswith('_rotated0deg.png'):
                 new_data.append(dataset_dicts[i])
-                counter+=1 
+                counter+=1
     print('len dataset is:', len(new_data), annotation_filepath)
     return new_data
 
