@@ -1,0 +1,14 @@
+_BASE_: "base_lofar_fast_rcnn"
+MODEL:
+OUTPUT_DIR: "/data/mostertrij/tridentnet/output/v18_10/"
+DATASETS:
+  TEST: ("train","val","test")
+  TRAIN_SIZE: 10
+SOLVER:
+  #LR_SCHEDULER_NAME:  "WarmupCosineLR" 
+  STEPS: ()
+  MAX_ITER: 20000
+  CHECKPOINT_PERIOD: 30000
+#TEST:
+#EVAL_PERIOD: 20000
+#EXTRA_EVAL: [1,500,1000,2500,5000,10000,15000]

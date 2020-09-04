@@ -9,8 +9,10 @@ MODEL:
   PROPOSAL_GENERATOR:
     NAME: "PrecomputedProposals"
   # Determine mean of our GBR channels
-  PIXEL_MEAN: [242.868, 246.401, 246.283]
-  PIXEL_STD: [52.314, 15.5175, 44.389]
+  #PIXEL_MEAN: [242.868, 246.401, 246.283]
+  #PIXEL_STD: [52.314, 15.5175, 44.389]
+  PIXEL_MEAN: [246.76874, 239.2626,  249.68981] 
+  PIXEL_STD: [12.0407, 8.531488, 10.88658]
   #RESNETS:
   #  STRIDE_IN_1X1: False  # this is a C2 model
   #  NUM_GROUPS: 32
@@ -25,18 +27,16 @@ MODEL:
   ROI_HEADS:
     BATCH_SIZE_PER_IMAGE: 512   # faster, and good enough for this toy dataset (default: 512)
     NUM_CLASSES: 1  # only has one class (radio_source)
-EXPERIMENT_NAME: "v17_100"
-OUTPUT_DIR: "/data/mostertrij/tridentnet/output/v17_100/"
-DATASET_PATH: "/data/mostertrij/data/frcnn_images/LGZ_precomputed_bboxes/LGZ_COCOstyle/annotations/"
+EXPERIMENT_NAME: "precomputed"
+OUTPUT_DIR: "/data/mostertrij/tridentnet/output/precomputed_bboxes/"
+DATASET_PATH: "/data/mostertrij/data/frcnn_images/LGZ_precomputed_bboxes_300arcsec/LGZ_COCOstyle/annotations/"
 DATALOADER:
   # proposals are part of the dataset_dicts, and take a lot of RAM
   NUM_WORKERS: 1
 DATASETS:
   TRAIN: ("train",)
-  #VAL: ("val",)
   TEST: ("train","val","test")
   IMAGE_DIR: "/data/mostertrij/data/frcnn_images/"
-  TRAIN_SIZE: 100
 INPUT:
   SCALE_FACTOR: 1.5037593984962405 
   MIN_SIZE_TRAIN: (200,)
@@ -46,10 +46,10 @@ INPUT:
 SOLVER:
   #LR_SCHEDULER_NAME:  "WarmupCosineLR" 
   BASE_LR: 0.0003
-  IMS_PER_BATCH: 2
+  IMS_PER_BATCH: 4
   STEPS: ()
-  MAX_ITER: 20000
+  MAX_ITER: 30
   CHECKPOINT_PERIOD: 30000
-#TEST:
-#EVAL_PERIOD: 20000
-#EXTRA_EVAL: [1,500,1000,2500,5000,10000,15000]
+TEST:
+  EVAL_PERIOD: 20000
+  #EXTRA_EVAL: [1,500,1000,2500,5000,10000,15000]
